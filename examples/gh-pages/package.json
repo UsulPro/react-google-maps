@@ -7,7 +7,8 @@
     "build": "npm run build:sync && npm run build:async",
     "build:sync": "cross-env NODE_ENV=production reacthtmlpack build $npm_package_config_reacthtmlpack_build_sync",
     "build:async": "cross-env NODE_ENV=production reacthtmlpack build $npm_package_config_reacthtmlpack_build_async",
-    "prestart": "npm run clean",
+    "copylib": "rimraf ./node_modules/react-google-maps/lib && cp -R ../../lib ./node_modules/react-google-maps",
+    "prestart": "npm run clean && npm run copylib",
     "start": "cross-env NODE_ENV=development reacthtmlpack devServer $npm_package_config_reacthtmlpack_devServer"
   },
   "config": {
