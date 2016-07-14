@@ -14,42 +14,42 @@ import {
 
 import {
   GettingStarted,
-  GeojsonToComponents,
+  // GeojsonToComponents,
 } from "../pages";
 
-import {
-  SimpleMap,
-  StyledMap,
-  Geolocation,
-  Directions,
-  OverlayView,
-  KmlLayerExample,
-  PopUpInfoWindow,
-} from "../pages/basics";
+// import {
+//   SimpleMap,
+//   StyledMap,
+//   Geolocation,
+//   Directions,
+//   OverlayView,
+//   KmlLayerExample,
+//   PopUpInfoWindow,
+// } from "../pages/basics";
 
-import {
-  SimpleClickEvent,
-  ClosureListeners,
-  AccessingArguments,
-  GettingProperties,
-} from "../pages/events";
+// import {
+//   SimpleClickEvent,
+//   ClosureListeners,
+//   AccessingArguments,
+//   GettingProperties,
+// } from "../pages/events";
 
-import {
-  DrawingTools,
-} from "../pages/drawing";
+// import {
+//   DrawingTools,
+// } from "../pages/drawing";
 
-import {
-  SearchBox,
-} from "../pages/places";
+// import {
+//   SearchBox,
+// } from "../pages/places";
 
-import {
-  MarkerClusterer,
-} from "../pages/addons";
+// import {
+//   MarkerClusterer,
+// } from "../pages/addons";
 
 export default (
   <Route path="/" component={Application}>
     <IndexRoute component={GettingStarted} />
-    <Route path="basics">
+    {/* <Route path="basics">
       <Route path="simple-map" component={SimpleMap} />
       <Route path="styled-map" component={StyledMap} />
       <Route path="geolocation" component={Geolocation} />
@@ -73,7 +73,7 @@ export default (
     <Route path="addons">
       <Route path="marker-clusterer" component={MarkerClusterer} />
     </Route>
-    <Route path="geojson" component={GeojsonToComponents} />
+    <Route path="geojson" component={GeojsonToComponents} /> */}
     <Redirect path="*" to="/" />
   </Route>
 );

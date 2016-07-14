@@ -1,14 +1,28 @@
+import _ from "lodash";
+
 import {
   default as React,
   Component,
   PropTypes,
 } from "react";
 
-import { default as update } from "react-addons-update";
-import { default as FaSpinner } from "react-icons/lib/fa/spinner";
+import {
+  default as update,
+} from "react-addons-update";
 
-import { default as ScriptjsLoader } from "react-google-maps/lib/async/ScriptjsLoader";
-import { GoogleMap, Marker } from "react-google-maps";
+import {
+  default as FaSpinner,
+} from "react-icons/lib/fa/spinner";
+
+import {
+  default as withScriptjs,
+} from "react-google-maps/lib/async/withScriptjs";
+
+import {
+  withGoogleMap,
+  GoogleMap,
+  Marker,
+} from "react-google-maps";
 
 /*
  * This is the modify version of:
@@ -16,13 +30,30 @@ import { GoogleMap, Marker } from "react-google-maps";
  *
  * Loaded using async loader.
  */
+const AsyncGettingStartedGoogleMap = _.flowRight(
+  withScriptjs,
+  withGoogleMap,
+)(props => (
+  <GoogleMap
+    ref={props.onMapLoad}
+    defaultZoom={3}
+    defaultCenter={{ lat: -25.363882, lng: 131.044922 }}
+    onClick={props.onMapClick}
+  >
+    {props.markers.map((marker, index) => (
+      <Marker
+        {...marker}
+        onRightClick={() => props.onMarkerRightClick(index)}
+      />
+    ))}
+  </GoogleMap>
+));
+
 export default class AsyncGettingStarted extends Component {
 
   static propTypes = {
     toast: PropTypes.func.isRequired,
   };
-
-  static version = Math.ceil(Math.random() * 22);
 
   state = {
     markers: [{
@@ -33,6 +64,17 @@ export default class AsyncGettingStarted extends Component {
       key: `Taiwan`,
       defaultAnimation: 2,
     }],
+  }
+
+  handleMapLoad = ::this.handleMapLoad;
+  handleMapClick = ::this.handleMapClick;
+  handleMarkerRightClick = ::this.handleMarkerRightClick;
+
+  handleMapLoad(map) {
+    this._mapComponent = map;
+    if (map) {
+      console.log(map.getZoom());
+    }
   }
 
   /*
@@ -60,7 +102,7 @@ export default class AsyncGettingStarted extends Component {
     }
   }
 
-  handleMarkerRightclick(index, event) {
+  handleMarkerRightClick(index, event) {
     /*
      * All you modify is data, and the view is driven by data.
      * This is so called data-driven-development. (And yes, it's now in
@@ -75,40 +117,12 @@ export default class AsyncGettingStarted extends Component {
     this.setState({ markers });
   }
 
-  handleGoogleMapLoad(googleMap) {
-    // Wait until GoogleMap is fully loaded. Related to #133
-    setTimeout(() => {
-      if (!googleMap) {
-        return;
-      }
-      console.log(googleMap);
-      console.log(`Zoom: ${googleMap.getZoom()}`);
-      console.log(`Center: ${googleMap.getCenter()}`);
-    }, 50);
-  }
-
-  handleNewBehaviorGoogleMapLoad(googleMap) {
-    if (!googleMap) {
-      return;
-    }
-    console.log(googleMap);
-    console.log(`Zoom: ${googleMap.getZoom()}`);
-    console.log(`Center: ${googleMap.getCenter()}`);
-  }
-
-  renderDeprecatedBehavior() { // Remove when reach 5.0.0
+  render() {
     return (
-      <ScriptjsLoader
-        hostname={"maps.googleapis.com"}
-        pathname={"/maps/api/js"}
-        query={{ v: `3.${AsyncGettingStarted.version}`, libraries: `geometry,drawing,places` }}
+      <AsyncGettingStartedGoogleMap
+        googleMapURL="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places"
         loadingElement={
-          <div
-            {...this.props}
-            style={{
-              height: `100%`,
-            }}
-          >
+          <div style={{ height: `100%` }}>
             <FaSpinner
               style={{
                 display: `block`,
@@ -118,81 +132,17 @@ export default class AsyncGettingStarted extends Component {
             />
           </div>
         }
-        googleMapElement={
-          <GoogleMap
-            containerProps={{
-              ...this.props,
-              style: {
-                height: `100%`,
-              },
-            }}
-            ref={::this.handleGoogleMapLoad}
-            defaultZoom={3}
-            defaultCenter={{ lat: -25.363882, lng: 131.044922 }}
-            onClick={::this.handleMapClick}
-          >
-            {this.state.markers.map((marker, index) => {
-              const onRightclick = this.handleMarkerRightclick.bind(this, index);
-              return (
-                <Marker
-                  {...marker}
-                  onRightclick={onRightclick}
-                />
-              );
-            })}
-          </GoogleMap>
-        }
-      />
-    );
-  }
-
-  renderNewBehavior() {
-    return (
-      <ScriptjsLoader
-        hostname={"maps.googleapis.com"}
-        pathname={"/maps/api/js"}
-        query={{ v: `3.${AsyncGettingStarted.version}`, libraries: `geometry,drawing,places` }}
-        loadingElement={
-          <div {...this.props} style={{ height: `100%` }}>
-            <FaSpinner
-              style={{
-                display: `block`,
-                width: 200,
-                height: 200,
-                margin: `100px auto`,
-                animation: `fa-spin 2s infinite linear`,
-              }}
-            />
-          </div>
-        }
         containerElement={
-          <div {...this.props} style={{ height: `100%` }} />
+          <div style={{ height: `100%` }} />
         }
-        googleMapElement={
-          <GoogleMap
-            ref={::this.handleNewBehaviorGoogleMapLoad}
-            defaultZoom={3}
-            defaultCenter={{ lat: -25.363882, lng: 131.044922 }}
-            onClick={::this.handleMapClick}
-          >
-            {this.state.markers.map((marker, index) => {
-              const onRightclick = this.handleMarkerRightclick.bind(this, index);
-              return (
-                <Marker
-                  {...marker}
-                  onRightclick={onRightclick}
-                />
-              );
-            })}
-          </GoogleMap>
+        mapElement={
+          <div style={{ height: `100%` }} />
         }
+        onMapLoad={this.handleMapLoad}
+        onMapClick={this.handleMapClick}
+        markers={this.state.markers}
+        onMarkerRightClick={this.handleMarkerRightClick}
       />
     );
-  }
-
-  render() {
-    // <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places" />
-    // return this.renderDeprecatedBehavior(); // Uncomment for legacy support
-    return this.renderNewBehavior();
   }
 }

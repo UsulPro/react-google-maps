@@ -4,8 +4,13 @@ import { default as update } from "react-addons-update";
 import { default as canUseDOM } from "can-use-dom";
 import { default as _ } from "lodash";
 
-import { GoogleMapLoader, GoogleMap, Marker } from "react-google-maps";
-import { triggerEvent } from "react-google-maps/lib/utils";
+import {
+  withGoogleMap,
+  GoogleMap,
+  Marker,
+} from "react-google-maps";
+
+// import { triggerEvent } from "react-google-maps/lib/utils";
 
 /*
  * This is the modify version of:
@@ -13,6 +18,22 @@ import { triggerEvent } from "react-google-maps/lib/utils";
  *
  * Add <script src="https://maps.googleapis.com/maps/api/js"></script> to your HTML to provide google.maps reference
  */
+const GettingStartedGoogleMap = withGoogleMap(props => (
+  <GoogleMap
+    ref={props.onMapLoad}
+    defaultZoom={3}
+    defaultCenter={{ lat: -25.363882, lng: 131.044922 }}
+    onClick={props.onMapClick}
+  >
+    {props.markers.map((marker, index) => (
+      <Marker
+        {...marker}
+        onRightClick={() => props.onMarkerRightClick(index)}
+      />
+    ))}
+  </GoogleMap>
+));
+
 export default class GettingStarted extends Component {
 
   state = {
@@ -24,30 +45,35 @@ export default class GettingStarted extends Component {
       key: `Taiwan`,
       defaultAnimation: 2,
     }],
-  }
+  };
 
-  constructor(props, context) {
-    super(props, context);
-    this.handleWindowResize = _.throttle(::this.handleWindowResize, 500);
-  }
+  handleWindowResize = _.throttle(::this.handleWindowResize, 500);
+  handleMapLoad = ::this.handleMapLoad;
+  handleMapClick = ::this.handleMapClick;
+  handleMarkerRightClick = ::this.handleMarkerRightClick;
 
   componentDidMount() {
-    if (!canUseDOM) {
-      return;
+    if (canUseDOM) {
+      window.addEventListener(`resize`, this.handleWindowResize);
     }
-    window.addEventListener(`resize`, this.handleWindowResize);
   }
 
   componentWillUnmount() {
-    if (!canUseDOM) {
-      return;
+    if (canUseDOM) {
+      window.removeEventListener(`resize`, this.handleWindowResize);
     }
-    window.removeEventListener(`resize`, this.handleWindowResize);
   }
 
   handleWindowResize() {
-    console.log(`handleWindowResize`, this._googleMapComponent);
-    triggerEvent(this._googleMapComponent, `resize`);
+    console.log(`handleWindowResize`, this._mapComponent);
+    // triggerEvent(this._mapComponent, `resize`);
+  }
+
+  handleMapLoad(map) {
+    this._mapComponent = map;
+    if (map) {
+      console.log(map.getZoom());
+    }
   }
 
   /*
@@ -75,7 +101,7 @@ export default class GettingStarted extends Component {
     }
   }
 
-  handleMarkerRightclick(index, event) {
+  handleMarkerRightClick(index, event) {
     /*
      * All you modify is data, and the view is driven by data.
      * This is so called data-driven-development. (And yes, it's now in
@@ -90,40 +116,19 @@ export default class GettingStarted extends Component {
     this.setState({ markers });
   }
 
-  handleGoogleMapLoad(googleMap) {
-    this._googleMapComponent = googleMap;
-    console.log(googleMap.getZoom());
-  }
-
   render() {
     return (
-      <GoogleMapLoader
+      <GettingStartedGoogleMap
         containerElement={
-          <div
-            {...this.props}
-            style={{
-              height: `100%`,
-            }}
-          />
+          <div style={{ height: `100%` }} />
         }
-        googleMapElement={
-          <GoogleMap
-            ref={::this.handleGoogleMapLoad}
-            defaultZoom={3}
-            defaultCenter={{ lat: -25.363882, lng: 131.044922 }}
-            onClick={::this.handleMapClick}
-          >
-            {this.state.markers.map((marker, index) => {
-              const onRightclick = this.handleMarkerRightclick.bind(this, index);
-              return (
-                <Marker
-                  {...marker}
-                  onRightclick={onRightclick}
-                />
-              );
-            })}
-          </GoogleMap>
+        mapElement={
+          <div style={{ height: `100%` }} />
         }
+        onMapLoad={this.handleMapLoad}
+        onMapClick={this.handleMapClick}
+        markers={this.state.markers}
+        onMarkerRightClick={this.handleMarkerRightClick}
       />
     );
   }
