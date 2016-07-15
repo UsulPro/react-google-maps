@@ -37,3 +37,7 @@ export {
 export {
   default as InfoWindow,
 } from "./InfoWindow";
+
+export {
+  default as OverlayView,
+} from "./OverlayView";
