@@ -19,7 +19,6 @@ import {
 
   Circle,
   DirectionsRenderer,
-  DrawingManager,
   InfoWindow,
   Marker,
   OverlayView,
@@ -36,7 +35,6 @@ describe(`index`, () => {
 
     expect(Circle).toExist();
     expect(DirectionsRenderer).toExist();
-    expect(DrawingManager).toExist();
     expect(InfoWindow).toExist();
     expect(Marker).toExist();
     expect(OverlayView).toExist();
