@@ -3,7 +3,7 @@ import {
 } from "expect";
 
 import {
-  GoogleMapLoader,
+  withGoogleMap,
   GoogleMap,
 
   Circle,
@@ -20,7 +20,7 @@ import {
 
 describe(`index`, () => {
   it(`should be exported`, () => {
-    expect(GoogleMapLoader).toExist();
+    expect(withGoogleMap).toExist();
     expect(GoogleMap).toExist();
 
     expect(Circle).toExist();
