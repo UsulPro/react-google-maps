@@ -9,3 +9,7 @@ export {
 export {
   default as Marker,
 } from "./Marker";
+
+export {
+  default as Rectangle,
+} from "./Rectangle";
