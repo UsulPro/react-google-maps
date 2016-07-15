@@ -1,68 +1,131 @@
+import _ from "lodash";
+
 import {
   default as React,
-  Component,
+  PropTypes,
+  Children,
 } from "react";
 
 import {
-  default as canUseDOM,
-} from "can-use-dom";
+  render,
+} from "react-dom";
 
 import {
-  default as InfoBoxCreator,
-  infoBoxDefaultPropTypes,
-  infoBoxControlledPropTypes,
-  infoBoxEventPropTypes,
-} from "./addonsCreators/InfoBoxCreator";
+  default as GoogleMapsInfobox,
+} from "google-maps-infobox";
 
-/*
- * Original author: @wuct
- * Original PR: https://github.com/tomchentw/react-google-maps/pull/54
- */
-export default class InfoBox extends Component {
-  static propTypes = {
-    // Uncontrolled default[props] - used only in componentDidMount
-    ...infoBoxDefaultPropTypes,
-    // Controlled [props] - used in componentDidMount/componentDidUpdate
-    ...infoBoxControlledPropTypes,
-    // Event [onEventName]
-    ...infoBoxEventPropTypes,
-  }
+import {
+  MAP,
+  ANCHOR,
+  INFO_BOX,
+} from "../constants";
 
+import {
+  addDefaultPrefixToPropTypes,
+  collectUncontrolledAndControlledProps,
+  default as enhanceElement,
+} from "../enhanceElement";
+
+const controlledPropTypes = {
+  // NOTICE!!!!!!
+  //
+  // Only expose those with getters & setters in the table as controlled props.
+  //
+  // http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/docs/reference.html
+  content: PropTypes.any,
+  options: PropTypes.object,
+  position: PropTypes.any,
+  visible: PropTypes.bool,
+  zIndex: PropTypes.number,
+};
+
+const defaultUncontrolledPropTypes = addDefaultPrefixToPropTypes(controlledPropTypes);
+
+const eventMap = {
+  // http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/docs/reference.html
+  onCloseClick: `closeclick`,
+  // `content_changed`,
+  // `domready`,
+  // `position_changed`,
+  // `zindex_changed`,
+};
+
+const publicMethodMap = {
   // Public APIs
   //
   // http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/docs/reference.html
-  getContent() { /* TODO: children */ }
+  getPosition(infoBox) { return infoBox.getPosition(); },
 
-  getPosition() { return this.state.infoBox.getPosition(); }
+  getVisible(infoBox) { return infoBox.getVisible(); },
 
-  getVisible() { return this.state.infoBox.getVisible(); }
-
-  getZIndex() { return this.state.infoBox.getZIndex(); }
+  getZIndex(infoBox) { return infoBox.getZIndex(); },
   // END - Public APIs
-  //
-  // http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/docs/reference.html
+};
 
-  state = {
-  }
+const controlledPropUpdaterMap = {
+  children(infoWindow, children) {
+    render(Children.only(children), infoWindow.getContent());
+  },
+  content(infoWindow, content) {
+    render(Children.only(content), infoWindow.getContent());
+  },
+  options(infoBox, options) { infoBox.setOptions(options); },
+  position(infoBox, position) { infoBox.setPosition(position); },
+  visible(infoBox, visible) { infoBox.setVisible(visible); },
+  zIndex(infoBox, zIndex) { infoBox.setZIndex(zIndex); },
+};
 
-  componentWillMount() {
-    if (!canUseDOM) {
-      return;
+function getInstanceFromComponent(component) {
+  return component.state[INFO_BOX];
+}
+
+export default _.flowRight(
+  React.createClass,
+  enhanceElement(getInstanceFromComponent, publicMethodMap, eventMap, controlledPropUpdaterMap),
+)({
+  displayName: `InfoBox`,
+
+  propTypes: {
+    ...controlledPropTypes,
+    ...defaultUncontrolledPropTypes,
+  },
+
+  contextTypes: {
+    [MAP]: PropTypes.object,
+    [ANCHOR]: PropTypes.object,
+  },
+
+  getInitialState() {
+    const map = this.context[MAP];
+    // http://google-maps-utility-library-v3.googlecode.com/svn/trunk/infobox/docs/reference.html
+    const infoBox = new GoogleMapsInfobox({
+      map,
+      ...collectUncontrolledAndControlledProps(
+        defaultUncontrolledPropTypes,
+        controlledPropTypes,
+        this.props
+      ),
+      // Override props of ReactElement type
+      content: document.createElement(`div`),
+      children: undefined,
+    });
+    const anchor = this.context[ANCHOR];
+    if (anchor) {
+      infoBox.open(map, anchor);
     }
-    const infoBox = InfoBoxCreator._createInfoBox(this.props);
+    return {
+      [INFO_BOX]: infoBox,
+    };
+  },
 
-    this.setState({ infoBox });
-  }
+  componentWillUnmount() {
+    const infoBox = this.state[INFO_BOX];
+    if (infoBox) {
+      infoBox.setMap(null);
+    }
+  },
 
   render() {
-    if (this.state.infoBox) {
-      return (
-        <InfoBoxCreator infoBox={this.state.infoBox} {...this.props}>
-          {this.props.children}
-        </InfoBoxCreator>
-      );
-    } else {
-      return (<noscript />);
-    }
-  }
-}
+    return false;
+  },
+});
