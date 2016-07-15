@@ -13,3 +13,7 @@ export {
 export {
   default as Rectangle,
 } from "./Rectangle";
+
+export {
+  default as Polyline,
+} from "./Polyline";
