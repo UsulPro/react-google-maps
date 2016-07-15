@@ -9,6 +9,7 @@ import {
   MAP,
   MARKER,
   ANCHOR,
+  MARKER_CLUSTERER,
 } from "./constants";
 
 import {
@@ -191,6 +192,7 @@ export default _.flowRight(
 
   contextTypes: {
     [MAP]: PropTypes.object,
+    [MARKER_CLUSTERER]: PropTypes.object,
   },
 
   childContextTypes: {
@@ -214,13 +216,17 @@ export default _.flowRight(
 
   getChildContext() {
     return {
-      [ANCHOR]: this.state[MARKER],
+      [ANCHOR]: this.context[MARKER_CLUSTERER] || this.state[MARKER],
     };
   },
 
   componentWillUnmount() {
     const marker = this.state[MARKER];
     if (marker) {
+      const anchor = this.context[MARKER_CLUSTERER];
+      if (anchor) {
+        anchor.removeMarker(marker);
+      }
       marker.setMap(null);
     }
   },
