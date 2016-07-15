@@ -25,7 +25,6 @@ import {
   Polygon,
   Polyline,
   Rectangle,
-  SearchBox,
 } from "../index";
 
 describe(`index`, () => {
@@ -41,7 +40,6 @@ describe(`index`, () => {
     expect(Polygon).toExist();
     expect(Polyline).toExist();
     expect(Rectangle).toExist();
-    expect(SearchBox).toExist();
   });
 
   context(`combine withGoogleMap with GoogleMap`, () => {
