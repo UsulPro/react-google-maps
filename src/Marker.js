@@ -8,6 +8,7 @@ import {
 import {
   MAP,
   MARKER,
+  ANCHOR,
 } from "./constants";
 
 import {
@@ -192,6 +193,10 @@ export default _.flowRight(
     [MAP]: PropTypes.object,
   },
 
+  childContextTypes: {
+    [ANCHOR]: PropTypes.object,
+  },
+
   getInitialState() {
     // https://developers.google.com/maps/documentation/javascript/3.exp/reference#Marker
     const marker = new google.maps.Marker({
@@ -207,6 +212,12 @@ export default _.flowRight(
     };
   },
 
+  getChildContext() {
+    return {
+      [ANCHOR]: this.state[MARKER],
+    };
+  },
+
   componentWillUnmount() {
     const marker = this.state[MARKER];
     if (marker) {
@@ -215,6 +226,14 @@ export default _.flowRight(
   },
 
   render() {
-    return false;
+    const {
+      children,
+    } = this.props;
+
+    return (
+      <div>
+        {children}
+      </div>
+    );
   },
 });
