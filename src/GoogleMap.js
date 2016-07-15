@@ -1,62 +1,112 @@
+import _ from "lodash";
+
 import {
   default as React,
   PropTypes,
-  Component,
 } from "react";
 
 import {
-  default as warning,
-} from "warning";
+  MAP,
+} from "./constants";
 
 import {
-  default as GoogleMapHolder,
-  mapDefaultPropTypes,
-  mapControlledPropTypes,
-  mapEventPropTypes,
-} from "./creators/GoogleMapHolder";
+  addDefaultPrefixToPropTypes,
+  collectUncontrolledAndControlledProps,
+  default as enhanceElement,
+} from "./enhanceElement";
 
-import {
-  default as GoogleMapLoader,
-} from "./GoogleMapLoader";
+const controlledPropTypes = {
+  // NOTICE!!!!!!
+  //
+  // Only expose those with getters & setters in the table as controlled props.
+  //
+  // [].map.call($0.querySelectorAll("tr>td>code"), function(it){ return it.textContent; })
+  //    .filter(function(it){ return it.match(/^set/) && !it.match(/^setMap/); })
+  //
+  // https://developers.google.com/maps/documentation/javascript/3.exp/reference#Map
+  center: PropTypes.object,
 
-const USE_NEW_BEHAVIOR_TAG_NAME = `__new_behavior__`;
+  heading: PropTypes.number,
 
-export default class GoogleMap extends Component {
-  static propTypes = {
-    containerTagName: PropTypes.string,
-    containerProps: PropTypes.object,
-    map: PropTypes.object,
-    // Uncontrolled default[props] - used only in componentDidMount
-    ...mapDefaultPropTypes,
-    // Controlled [props] - used in componentDidMount/componentDidUpdate
-    ...mapControlledPropTypes,
-    // Event [onEventName]
-    ...mapEventPropTypes,
-  };
+  mapTypeId: PropTypes.any,
 
+  options: PropTypes.object,
+
+  streetView: PropTypes.any,
+
+  tilt: PropTypes.number,
+
+  zoom: PropTypes.number,
+};
+
+const defaultUncontrolledPropTypes = addDefaultPrefixToPropTypes(controlledPropTypes);
+
+const eventMap = {
+  // https://developers.google.com/maps/documentation/javascript/3.exp/reference#Map
+  // [].map.call($0.querySelectorAll("tr>td>code"), function(it){ return it.textContent; })
+  // `bounds_changed`,
+
+  // `center_changed`,
+
+  onClick: `click`,
+
+  // `dblclick`,
+
+  // `drag`,
+
+  // `dragend`,
+
+  // `dragstart`,
+
+  // `heading_changed`,
+
+  // `idle`,
+
+  // `maptypeid_changed`,
+
+  // `mousemove`,
+
+  // `mouseout`,
+
+  // `mouseover`,
+
+  // `projection_changed`,
+
+  // `resize`,
+
+  // `rightclick`,
+
+  // `tilesloaded`,
+
+  // `tilt_changed`,
+
+  onZoomChanged: `zoom_changed`,
+};
+
+const publicMethodMap = {
   // Public APIs
   //
   // https://developers.google.com/maps/documentation/javascript/3.exp/reference#Map
   //
   // [].map.call($0.querySelectorAll("tr>td>code"), function(it){ return it.textContent; })
   //    .filter(function(it){ return it.match(/^get/) && !it.match(/Map$/); })
-  getBounds() { return (this.props.map || this.refs.delegate).getBounds(); }
+  getBounds(map) { return map.getBounds(); },
 
-  getCenter() { return (this.props.map || this.refs.delegate).getCenter(); }
+  getCenter(map) { return map.getCenter(); },
 
-  getDiv() { return (this.props.map || this.refs.delegate).getDiv(); }
+  getDiv(map) { return map.getDiv(); },
 
-  getHeading() { return (this.props.map || this.refs.delegate).getHeading(); }
+  getHeading(map) { return map.getHeading(); },
 
-  getMapTypeId() { return (this.props.map || this.refs.delegate).getMapTypeId(); }
+  getMapTypeId(map) { return map.getMapTypeId(); },
 
-  getProjection() { return (this.props.map || this.refs.delegate).getProjection(); }
+  getProjection(map) { return map.getProjection(); },
 
-  getStreetView() { return (this.props.map || this.refs.delegate).getStreetView(); }
+  getStreetView(map) { return map.getStreetView(); },
 
-  getTilt() { return (this.props.map || this.refs.delegate).getTilt(); }
+  getTilt(map) { return map.getTilt(); },
 
-  getZoom() { return (this.props.map || this.refs.delegate).getZoom(); }
+  getZoom(map) { return map.getZoom(); },
   // END - Public APIs
   //
   // https://developers.google.com/maps/documentation/javascript/3.exp/reference#Map
@@ -68,58 +118,71 @@ export default class GoogleMap extends Component {
   //
   // [].map.call($0.querySelectorAll("tr>td>code"), function(it){ return it.textContent; })
   //    .filter(function(it){ return !it.match(/^get/) && !it.match(/^set/) && !it.match(/Map$/); })
-  fitBounds(bounds) { return (this.props.map || this.refs.delegate).fitBounds(bounds); }
+  fitBounds(map, args) { return map.fitBounds(...args); },
 
-  panBy(x, y) { return (this.props.map || this.refs.delegate).panBy(x, y); }
+  panBy(map, args) { return map.panBy(...args); },
 
-  panTo(latLng) { return (this.props.map || this.refs.delegate).panTo(latLng); }
+  panTo(map, args) { return map.panTo(...args); },
 
-  panToBounds(latLngBounds) {
-    return (this.props.map || this.refs.delegate).panToBounds(latLngBounds);
-  }
+  panToBounds(map, args) { return map.panToBounds(...args); },
   // END - Public APIs - Use this carefully
-  //
-  // https://developers.google.com/maps/documentation/javascript/3.exp/reference#Map
+};
 
-  componentWillMount() {
-    const { containerTagName } = this.props;
-    const isUsingNewBehavior = USE_NEW_BEHAVIOR_TAG_NAME === containerTagName;
+const controlledPropUpdaterMap = {
+  center(map, center) { map.setCenter(center); },
 
-    warning(isUsingNewBehavior,
-`"GoogleMap" with containerTagName is deprecated now and will be removed in
- next major release (5.0.0). Use "GoogleMapLoader" instead.
-See https://github.com/tomchentw/react-google-maps/pull/157 for more details.`
+  heading(map, heading) { map.setHeading(heading); },
+
+  mapTypeId(map, mapTypeId) { map.setMapTypeId(mapTypeId); },
+
+  options(map, options) { map.setOptions(options); },
+
+  streetView(map, streetView) { map.setStreetView(streetView); },
+
+  tilt(map, tilt) { map.setTilt(tilt); },
+
+  zoom(map, zoom) { map.setZoom(zoom); },
+};
+
+function getInstanceFromComponent(component) {
+  return component.context[MAP];
+}
+
+export default _.flowRight(
+  React.createClass,
+  enhanceElement(getInstanceFromComponent, publicMethodMap, eventMap, controlledPropUpdaterMap),
+)({
+  displayName: `GoogleMap`,
+
+  propTypes: {
+    ...controlledPropTypes,
+    ...defaultUncontrolledPropTypes,
+  },
+
+  contextTypes: {
+    [MAP]: PropTypes.object,
+  },
+
+  getInitialState() {
+    this.context[MAP].setOptions(
+      collectUncontrolledAndControlledProps(
+        defaultUncontrolledPropTypes,
+        controlledPropTypes,
+        this.props
+      )
     );
-  }
+    return null;
+  },
 
   render() {
-    const { containerTagName, containerProps = {}, children, ...mapProps } = this.props;
-    const isUsingNewBehavior = USE_NEW_BEHAVIOR_TAG_NAME === containerTagName;
+    const {
+      children,
+    } = this.props;
 
-    if (isUsingNewBehavior) {
-      return (
-        <GoogleMapHolder {...mapProps}>
-          {children}
-        </GoogleMapHolder>
-      );
-    } else { // ------------ Deprecated ------------
-      const realContainerTagName = (
-        (containerTagName === undefined || containerTagName === null)
-        ? `div`
-        : containerTagName
-      );
-
-      return (
-        <GoogleMapLoader
-          ref="loader"
-          containerElement={React.createElement(realContainerTagName, containerProps)}
-          googleMapElement={
-            <GoogleMap ref="delegate" containerTagName={USE_NEW_BEHAVIOR_TAG_NAME} {...mapProps}>
-              {children}
-            </GoogleMap>
-          }
-        />
-      );
-    }
-  }
-}
+    return (
+      <div>
+        {children}
+      </div>
+    );
+  },
+});
